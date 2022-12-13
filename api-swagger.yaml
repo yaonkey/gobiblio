@@ -1,0 +1,348 @@
+openapi: "3.0.0"
+info:
+  title: "Biblio API"
+  version: "1.0"
+  contact:
+    name: "Evgeny Kuchuk"
+    email: "spideragent@sa-sec.org"
+servers:
+  - url: "https://api.bibliovk.ru/api/ref/"
+security:
+  - ApiKeyAuth: [ ]
+paths:
+  /find-book:
+    get:
+      tags:
+        - Книга
+      parameters:
+        - name: title
+          in: query
+          required: true
+          schema:
+            type: string
+      operationId: "getFindBook"
+      responses:
+        200:
+          description: "Найденные книги"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FoundBook'
+        422:
+          description: "Ошибки в запросе"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  errors:
+                    type: object
+  /data/catalog/full:
+    get:
+      tags:
+        - Книга
+      parameters:
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+      operationId: "getDataCatalogFull"
+      responses:
+        200:
+          description: "Список книг"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedBooks'
+  /data/catalog/{book_id}:
+    get:
+      tags:
+        - Книга
+      parameters:
+        - name: book_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      operationId: "getDataCatalogBookId"
+      responses:
+        200:
+          description: "Одна книга"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+  /me/rest-data:
+    get:
+      tags:
+        - Пользователь
+      parameters:
+        - name: X-Biblio-User
+          in: header
+          required: true
+          schema:
+            type: string
+      operationId: getMeRestData
+      responses:
+        200:
+          description: Данные пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: 'X-Biblio-Auth'
+      description: "Вы можете найти его в админ-панели: https://admin.bibliovk.ru/admin/system/referal-keys, необходим префикс 'Bearer '"
+  schemas:
+    Subscription:
+      required:
+        - name
+        - name_ru
+        - name_en
+        - expire_utc
+        - is_disabled
+      properties:
+        name:
+          description: Название подписки в коде
+          type: string
+        name_ru:
+          description: Название подписки на русском языке
+          type: string
+        name_en:
+          description: Название подписки на английском языке
+          type: string
+        expire_utc:
+          description: "Дата окончания действия. Формат: Y-m-d H:i:s"
+          type: string
+        is_disabled:
+          description: Отключение подписки
+          type: boolean
+    User:
+      required:
+        - id
+        - name
+        - full_name
+        - must_listen_list
+        - purchased_books
+        - subscription
+      properties:
+        id:
+          description: ID в системе Библио
+          type: integer
+        name:
+          description: Имя
+          type: string
+        full_name:
+          description: Полное имя
+          type: string
+        must_listen_list:
+          description: ID книг в списке 'отложено'
+          type: array
+          items:
+            type: integer
+        subscription:
+          $ref: '#/components/schemas/Subscription'
+    BookWorkMeta:
+      required:
+        - translate_author
+        - copyright_holder
+        - biblio_note
+        - expiration_date
+      properties:
+        translate_author:
+          description: "Автор перевода"
+          type: string
+        copyright_holder:
+          description: "Правообладатель"
+          type: string
+        biblio_note:
+          description: "Заметка Библио"
+          type: string
+        publisher:
+          description: "Издатель"
+          type: string
+    TracksSizes:
+      description: "Размеры треков в байтах"
+      required:
+        - low
+        - medium
+        - high
+      properties:
+        low:
+          type: integer
+        medium:
+          type: integer
+        high:
+          type: integer
+    Book:
+      required:
+        - id
+        - title
+        - bio
+        - cover
+        - sizes
+        - duration
+        - rating
+        - comments_count
+        - for_subscribers
+        - amount
+        - plus_18
+        - plus_16
+        - with_music
+        - not_finished
+        - created_at
+        - updated_at
+        - tracks_count
+        - author_name
+        - reader_name
+        - genres
+        - genres_id
+        - lang_name
+        - meta_data
+        - audio_sample
+        - original_size_cover
+        - sale_closed
+        - publish_date
+      properties:
+        id:
+          description: "ID в системе Библио"
+          type: integer
+        title:
+          description: "Название"
+          type: string
+        bio:
+          description: "Описание"
+          type: string
+        cover:
+          description: "Обложка"
+          type: string
+        sizes:
+          $ref: '#/components/schemas/TracksSizes'
+        duration:
+          type: integer
+          description: "Длина в секундах"
+        rating:
+          type: number
+          format: float
+          description: "Рейтинг"
+        comments_count:
+          type: integer
+          description: "Количество комментариев"
+        for_subscribers:
+          type: boolean
+          description: "Доступна по подписке"
+        amount:
+          type: integer
+          description: "Цена"
+        plus_18:
+          type: boolean
+          description: "Рейтинг 18+"
+        plus_16:
+          type: boolean
+          description: "Рейтинг 16+"
+        with_music:
+          type: boolean
+          description: "Фоновая музыка"
+        not_finished:
+          type: boolean
+          description: "Не завершена"
+        created_at:
+          type: string
+          description: "Дата и время создания. Формат: Y-m-d H:i:s UTC+0"
+        updated_at:
+          type: string
+          description: "Дата и время последнего обновления. Формат: Y-m-d H:i:s UTC+0"
+        tracks_count:
+          type: integer
+          description: "Количество треков"
+        author_name:
+          type: string
+          description: "Имя автора"
+        reader_name:
+          type: string
+          description: "Имя чтеца"
+        series_name:
+          type: string
+          description: Название серии книг
+        series_num:
+          type: number
+          description: Номер книги в серии
+        genres:
+          type: string
+          description: Жанры, разделенные запятой
+        genres_id:
+          type: string
+          description: ID жанров, разденные запятой
+        lang_name:
+          type: string
+          description: Код языка
+        meta_data:
+          $ref: '#/components/schemas/BookWorkMeta'
+        audio_sample:
+          type: string
+          description: Аудио-сэмпл
+        original_size_cover:
+          type: string
+          description: Обложка в оригинальном размере
+        sale_closed:
+          type: boolean
+          description: Закрыты продажи
+        publish_date:
+          type: string
+          description: "Дата публикации. Формат: Y-m-d H:i:s UTC+0"
+    PagedBooks:
+      required:
+        - data
+      properties:
+        per_page:
+          description: "Запрошенное количество книг на странице"
+          type: integer
+        current_page:
+          description: "Номер текущей страницы"
+          type: integer
+        last_page:
+          description: "Номер последней страницы"
+          type: integer
+        count:
+          description: "Количество книг в ответе"
+          type: integer
+        total:
+          description: "Общее количество книг"
+          type: integer
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Book'
+    FoundBook:
+      required:
+        - id
+        - title
+        - author_name
+        - reader_name
+      properties:
+        id:
+          description: "ID в системе Библио"
+          type: integer
+        title:
+          description: "Название"
+          type: string
+        author_name:
+          type: string
+          description: "Имя автора"
+        reader_name:
+          type: string
+          description: "Имя чтеца"

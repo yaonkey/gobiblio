@@ -10,7 +10,7 @@
 ################
 # КОНФИГУРАЦИЯ #
 # Общее #
-$referalKey = "";  # Ключ реферала
+$referal_key = "";  # Ключ реферала
 
 # База данных #
 $db_driver = "mysql";  # Драйвер базы данных
@@ -47,11 +47,10 @@ $meta_publisher = "";  # Поле издателя книги из Biblio
 
 ################################################################################
 
-const per_page = 2;  # Количество книг за запрос (значение выше не ставить)
+const per_page = 50;
 
-# Переменные запроса
+# Переменные запроса (не изменять)
 $current_page = 0;  # Текущая страница
-$total_books = 0;  # Общее количество книг в Biblio
 $last_page = 0;  # Последняя страница
 $biblio_api_url = "https://api.bibliovk.ru/api/ref/data/catalog/full?per_page=" . per_page . "&page=$current_page";  # URL API
 $database = new StdClass;
@@ -75,7 +74,7 @@ class Book
     public $genres = "";
     public $lang = "";
     public $publish_date = "";
-    public $sale_closed;
+    public $sale_closed = false;
 
     function __construct($id, $title, $bio, $cover, $duration, $rating, $amount, $plus18, $plus16, $with_music,
                          $not_finished, $author, $reader, $series, $genres, $lang, $publish_date, $sale_closed)
@@ -119,8 +118,18 @@ function GetBooksFromPage()
 {
     global $current_page;
     global $biblio_api_url;
+    global $referal_key;
 
-    $books = json_decode(file_get_contents($biblio_api_url), true);
+    $opts = [
+        "http" => [
+            "method" => "GET",
+            "header" => "Content-Type: application/json\r\n" .
+                "X-Biblio-Auth: Bearer $referal_key\r\n"
+        ]
+    ];
+    $ctx = stream_context_create($opts);
+
+    $books = json_decode(file_get_contents($biblio_api_url), true, $ctx);
     $current_page++;
 
     return $books;
@@ -225,6 +234,6 @@ function GetBooksFromAllPages()
     }
 }
 
- GetBooksFromAllPages();
+GetBooksFromAllPages();
 
 ?>

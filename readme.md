@@ -1,49 +1,17 @@
-{
-  "per_page": 0,
-  "current_page": 0,
-  "last_page": 0,
-  "count": 0,
-  "total": 0,
-  "data": [
-    {
-      "id": 0,
-      "title": "string",
-      "bio": "string",
-      "cover": "string",
-      "sizes": {
-        "low": 0,
-        "medium": 0,
-        "high": 0
-      },
-      "duration": 0,
-      "rating": 0,
-      "comments_count": 0,
-      "for_subscribers": true,
-      "amount": 0,
-      "plus_18": true,
-      "plus_16": true,
-      "with_music": true,
-      "not_finished": true,
-      "created_at": "string",
-      "updated_at": "string",
-      "tracks_count": 0,
-      "author_name": "string",
-      "reader_name": "string",
-      "series_name": "string",
-      "series_num": 0,
-      "genres": "string",
-      "genres_id": "string",
-      "lang_name": "string",
-      "meta_data": {
-        "translate_author": "string",
-        "copyright_holder": "string",
-        "biblio_note": "string",
-        "publisher": "string"
-      },
-      "audio_sample": "string",
-      "original_size_cover": "string",
-      "sale_closed": true,
-      "publish_date": "string"
-    }
-  ]
-}
+# Добавление книг при помощи скрипта
+
+## Подготовка
+
+1. Создать бекап
+2. Открыть скрипт `biblio-addbooks.php`
+3. Изменить конфигурацию (подробнее в пункте "Конфигурация")
+4. Запустить скрипт, используя команду `php` или прописать `chmod +x biblio-addbooks.php` и запустить при
+   помощи `./biblio-addbooks.php`
+
+## Конфигурирование
+
+Комментарии к каждому пункту заполнения информации в скрипте присутствуют.
+
+* Первым делом должна быть заполнена переменная с ключом реферала `$referal_key`
+* Требуется заполнить информацию для подключения к базе данных
+* Требуется заполнить информацию, содержащую поля базы данных

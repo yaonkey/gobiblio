@@ -129,7 +129,7 @@ function GetBooksFromPage()
     ];
     $ctx = stream_context_create($opts);
 
-    $books = json_decode(file_get_contents($biblio_api_url), true, $ctx);
+    $books = json_decode(file_get_contents($biblio_api_url, false, $ctx), true);
     $current_page++;
 
     return $books;

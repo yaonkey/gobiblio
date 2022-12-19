@@ -47,12 +47,10 @@ $meta_publisher = "";  # Поле издателя книги из Biblio
 
 ################################################################################
 
-const per_page = 25;
-
 # Переменные запроса (не изменять)
 $current_page = 0;  # Текущая страница
 $last_page = 0;  # Последняя страница
-$biblio_api_url = "https://api.bibliovk.ru/api/ref/data/catalog/full?per_page=" . per_page . "&page=$current_page";  # URL API
+$biblio_api_url = "https://api.bibliovk.ru/api/ref/data/catalog/full?page=";  # URL API
 $database = new StdClass;
 
 class Book
@@ -129,7 +127,7 @@ function GetBooksFromPage()
     ];
     $ctx = stream_context_create($opts);
 
-    $books = json_decode(file_get_contents($biblio_api_url, false, $ctx), true);
+    $books = json_decode(file_get_contents($biblio_api_url.$current_page, false, $ctx), true);
     $current_page++;
 
     return $books;
@@ -177,32 +175,32 @@ function SaveBooksFromPage($books)
     global $meta_copyright;
     global $meta_publisher;
 
-    foreach ($books as $book) {
+    foreach ($books as $book['data']) {
         $current_book = new Book(
-            $book['data']["id"],
-            $book['data']["title"],
-            $book['data']["bio"],
-            $book['data']["cover"],
-            $book['data']["duration"],
-            $book['data']["rating"],
-            $book['data']["amount"],
-            $book['data']["plus_18"],
-            $book['data']["plus_16"],
-            $book['data']["with_music"],
-            $book['data']["not_finished"],
-            $book['data']["author_name"],
-            $book['data']["reader_name"],
-            $book['data']["series_name"],
-            $book['data']["genres"],
-            $book['data']["lang"],
-            $book['data']["publish_date"],
-            $book['data']["sale_closed"]
+            $book["id"] ?: null,
+            $book["title"] ?: null,
+            $book["bio"] ?: null,
+            $book["cover"] ?: null,
+            $book["duration"] ?: null,
+            $book["rating"] ?: null,
+            $book["amount"] ?: null,
+            $book["plus_18"] ?: null,
+            $book["plus_16"] ?: null,
+            $book["with_music"] ?: null,
+            $book["not_finished"] ?: null,
+            $book["author_name"] ?: null,
+            $book["reader_name"] ?: null,
+            $book["series_name"] ?: null,
+            $book["genres"] ?: null,
+            $book["lang_name"] ?: null,
+            $book["publish_date"] ?: null,
+            $book["sale_closed"] ?: null
         );
 
         $current_meta = new Meta(
-            $book['meta_data']["translate_author"],
-            $book['meta_data']["copyright_holder"],
-            $book['meta_data']["publisher"]
+            $book['meta_data']["translate_author"] ?: null,
+            $book['meta_data']["copyright_holder"] ?: null,
+            $book['meta_data']["publisher"] ?: null
         );
 
         $result = $database->exec("INSERT INTO $db_table (
@@ -226,7 +224,7 @@ function GetBooksFromAllPages()
     global $last_page;
     global $current_page;
 
-    NewDatabaseConnection();
+    // NewDatabaseConnection();
     $last_page = (int)GetBooksFromPage()["last_page"];
 
     while ($current_page <= $last_page) {

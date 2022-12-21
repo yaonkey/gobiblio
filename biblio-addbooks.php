@@ -198,8 +198,7 @@ function SaveBooksFromPage($books)
             `{$book_id}`, `{$book_title}`, `{$book_bio}`, `{$book_cover}`, `{$book_duration}`, `{$book_rating}`, `{$book_amount}`, `{$book_plus18}`, `{$book_plus16}`, `{$book_with_music}`, `{$book_not_finished}`, `{$book_author}`, `{$book_reader}`, `{$book_series}`, `{$book_genres}`, `{$book_lang}`, `{$book_publish_date}`, `{$book_sale_closed}`, `{$meta_translater}`, `{$meta_copyright}`, `{$meta_publisher}`) 
             VALUES ({$current_book->id},"{$current_book->title}","{$current_book->bio}","{$current_book->cover}",{$current_book->duration},{$current_book->rating},{$current_book->amount},{$current_book->plus18},{$current_book->plus16},{$current_book->with_music},{$current_book->not_finished},"{$current_book->author}","{$current_book->reader}","{$current_book->series}","{$current_book->genres}","{$current_book->lang}","{$current_book->publish_date}",{$current_book->sale_closed},"{$current_meta->translater}","{$current_meta->copyright}","{$current_meta->publisher}"); 
             SQL;
-
-            print_r($sql);
+            
         try {
             $result = $database->exec($sql);
         } catch(PDOException $e) {

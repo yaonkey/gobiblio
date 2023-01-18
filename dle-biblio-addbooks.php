@@ -16,7 +16,7 @@ $referal_key = "";  # Ключ реферала
 $db_driver = "mysql";  # Драйвер базы данных
 $db_host = "localhost";  # Хост, на котором находится база данных
 $db_port = "3306";  # Порт, на котором находится база данных
-$db_user = "root";  # Пользователь базы данных
+$db_user = "";  # Пользователь базы данных
 $db_password = "";  # Пароль пользователя базы данных
 $db_name = "";  # Наименование базы данных для добавления книг
 $db_table = "";  # Наименование таблицы в базе данных для добавления книг
@@ -45,6 +45,14 @@ $meta_translater = "";  # Поле переводчика книги из Biblio
 $meta_copyright = "";  # Поле лицензии книги из Biblio
 $meta_publisher = "";  # Поле издателя книги из Biblio
 
+# Дополнительные поля для DLE
+$dle_author = "";
+$dle_fields = "";
+$dle_comm = "";
+$dle_main = "";
+$dle_approve = "";
+$dle_alt = "";
+$dle_category_db = "dle_category";
 ################################################################################
 
 # Переменные запроса (не изменять)
@@ -91,6 +99,7 @@ class Meta
 
 function GetBooksFromPage()
 {
+    print_r("getting books\n");
     global $current_page;
     global $biblio_api_url;
     global $referal_key;
@@ -112,6 +121,7 @@ function GetBooksFromPage()
 
 function NewDatabaseConnection()
 {
+    print_r("connection to database\n");
     global $db_driver;
     global $db_name;
     global $db_host;
@@ -121,10 +131,44 @@ function NewDatabaseConnection()
 
     try {
         $database = new PDO("$db_driver:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_password);
+        print_r("Connection ok\n");
     } catch (PDOException $e) {
         die("PDO Error: " . $e->getMessage());
     }
 }
+
+function GetCategories($categories) {
+    global $database;
+    global $dle_category_db;
+
+    $result = '';
+    $cats = explode(", ", $categories);
+
+    foreach ($cats as $category) {
+        $sql = "SELECT id FROM $dle_category_db cat WHERE cat.name = '$category'";
+        try{
+            	global $result;
+                $cat = $database->query($sql)->fetch();
+                if ($cat){
+                    $current_cat = $cat["id"];
+                    print_r("категория $category\n");
+                    print_r("id: $current_cat\n");
+                } else {
+                        print_r("нет категории\n");
+                        $sqlin = "INSERT INTO $dle_category_db (name) VALUES ('$category')";
+                        $res = $database->exec($sqlin);
+                        $cat = $database->query($sql);
+                        $current_cat = $cat->fetch()["id"];
+                }
+                $result.=$current_cat.",";
+        } catch (PDOException $e) {
+            print_r($database->errorInfo());
+        }
+    }
+    substr($result, 0, -1);
+    return $result;
+}
+
 
 function SaveBooksFromPage($books)
 {
@@ -151,6 +195,14 @@ function SaveBooksFromPage($books)
     global $meta_translater;
     global $meta_copyright;
     global $meta_publisher;
+
+    global $dle_author;
+    global $dle_approve;
+    global $dle_comm;
+    global $dle_fields;
+    global $dle_main;
+    global $dle_alt;
+
 
     foreach ($books["data"] as $book) {
         $current_book = new Book(
@@ -180,6 +232,9 @@ function SaveBooksFromPage($books)
             $book['meta_data']["publisher"]
         );
 
+        // Пропуск временно запрещенных к публикации книг
+        if ($book['meta_data']["publisher"] == 'UGC') continue;
+
         if (!empty($book["sale_closed"])) continue;
         if ($current_book->plus18) $current_book->plus18 = 1; else $current_book->plus18 = 0;
         if ($current_book->plus16) $current_book->plus16 = 1; else $current_book->plus16 = 0;
@@ -187,29 +242,61 @@ function SaveBooksFromPage($books)
         if ($current_book->not_finished) $current_book->not_finished = 1; else $current_book->not_finished = 0;
         if ($current_book->sale_closed) $current_book->sale_closed = 1; else $current_book->sale_closed = 0;
 
-        $check = <<<SQL
-                SELECT * FROM {$db_table} bt WHERE bt.{$book_id} = {$current_book->id};
-                SQL;
-        $result = $database->query($check);
-        if ($result->fetch()) continue;
+        print_r("Add book with id ".$current_book->id." and name ".$current_book->title."\n");
 
-        $sql = <<<SQL
-            INSERT INTO `{$db_table}` (
-            `{$book_id}`, `{$book_title}`, `{$book_bio}`, `{$book_cover}`, `{$book_duration}`, `{$book_rating}`, `{$book_amount}`, `{$book_plus18}`, `{$book_plus16}`, `{$book_with_music}`, `{$book_not_finished}`, `{$book_author}`, `{$book_reader}`, `{$book_series}`, `{$book_genres}`, `{$book_lang}`, `{$book_publish_date}`, `{$book_sale_closed}`, `{$meta_translater}`, `{$meta_copyright}`, `{$meta_publisher}`) 
-            VALUES ({$current_book->id},"{$current_book->title}","{$current_book->bio}","{$current_book->cover}",{$current_book->duration},{$current_book->rating},{$current_book->amount},{$current_book->plus18},{$current_book->plus16},{$current_book->with_music},{$current_book->not_finished},"{$current_book->author}","{$current_book->reader}","{$current_book->series}","{$current_book->genres}","{$current_book->lang}","{$current_book->publish_date}",{$current_book->sale_closed},"{$current_meta->translater}","{$current_meta->copyright}","{$current_meta->publisher}"); 
-            SQL;
-            
+        if (strripos($current_book->title, "'")) {
+            $temp_title = $current_book->title;
+            $current_book->title = str_replace("'", "\'", $temp_title);
+            print_r("Replaced title: ".$current_book->title);
+        }
+
+        $check = "SELECT * FROM $db_table bt WHERE bt.$book_title = '$current_book->title';";
+        try {
+            $result = $database->query($check);
+            if ($result->fetch()) continue;
+        } catch(PDOException $e) {
+            print_r($e->errorInfo());
+            continue;
+        }
+
+        $alt_name = "book-".$current_book->id;
+        $agelimit = "0+";
+        if ($current_book->plus18 == 1) {
+            $agelimit = "18+";
+        } else if ($current_book->plus16 == 1) {
+            $agelimit = "16+";
+        }
+
+        $d = strtotime("now");
+        $currentDate = date("Y-m-d h:i:s", $d);
+        $categories = GetCategories($current_book->genres);
+
+        $directoryWithFile = "./uploads/posts/biblio-books/".$alt_name.".jpg";
+        $shortDirectoryWithFile = "biblio-books/".$alt_name.".jpg";
+        if (!copy($current_book->cover, $directoryWithFile)){
+            print_r("Error with save image\n");
+        }
+
+        $sql = "INSERT INTO $db_table (
+                $dle_author,$book_bio,$dle_fields,$book_title,$dle_alt,$dle_comm,$dle_main,$dle_approve,$book_genres,full_story,keywords,date,category
+            ) VALUES (
+                'admin1', '$current_book->bio', 'format|Аудиокнига||name|$current_book->author||track_name|$current_book->title||book_reader|$current_book->reader||book_publisher|$current_meta->publisher||book_plus_18|$current_book->plus18||book_plus_16|$current_book->plus16||book_id|$current_book->id||poster|$shortDirectoryWithFile||text_pesen|$current_book->bio', '$current_book->title', '$alt_name', 1, 1, 1, '$current_book->genres','','','$currentDate','$categories'
+            );";
+
         try {
             $result = $database->exec($sql);
         } catch(PDOException $e) {
-            print_r($e->errorInfo);
+            print_r($e->errorInfo());
+            continue;
         }
-        if ($database->errorInfo()) continue;
+
+        print_r("done\n");
     }
 }
 
 function GetBooksFromAllPages()
 {
+    print_r("getting books from all pages\n");
     global $last_page;
     global $current_page;
 
@@ -218,7 +305,10 @@ function GetBooksFromAllPages()
 
     while ($current_page <= $last_page) {
         SaveBooksFromPage(GetBooksFromPage());
+        print_r("Pages: ".$current_page."/".$last_page."\n");
     }
+
+    print_r("Completed!");
 }
 
 GetBooksFromAllPages();

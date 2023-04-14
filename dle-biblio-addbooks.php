@@ -10,48 +10,51 @@
 ################
 # КОНФИГУРАЦИЯ #
 # Общее #
-$referal_key = "";  # Ключ реферала
+$referal_key = "bd1bedfeeadedb98e75724b033efcd650ffcba616d06dfbfbbaea680fa51407138941b03eaab840bd1d0c57dad9b664f9614";  # Ключ реферала
+$check_exist = false;  # Проверка наличия книг в действующем каталоге
+$create_new_categories = true;  # Создание новых категорий, если требуемая отсутствует
+$save_images_to_server = false;  # Сохранение изображений на сервер (если нет, в бд добавляется ссылка)
 
 # База данных #
 $db_driver = "mysql";  # Драйвер базы данных
 $db_host = "localhost";  # Хост, на котором находится база данных
 $db_port = "3306";  # Порт, на котором находится база данных
-$db_user = "";  # Пользователь базы данных
-$db_password = "";  # Пароль пользователя базы данных
-$db_name = "";  # Наименование базы данных для добавления книг
-$db_table = "";  # Наименование таблицы в базе данных для добавления книг
+$db_user = "f1rstik_audioon";  # Пользователь базы данных
+$db_password = "G%HYF3m6";  # Пароль пользователя базы данных
+$db_name = "f1rstik_audioon";  # Наименование базы данных для добавления книг
+$db_table = "dle_post";  # Наименование таблицы в базе данных для добавления книг
 
 # Поля базы данных #
-$book_id = "";  # Поле идентификатора книги из Biblio
-$book_title = "";  # Поле наименования книги из Biblio
-$book_bio = "";  # Поле описания книги из Biblio
-$book_cover = "";  # Поле обложки из Biblio
+$book_id = "book_id";  # Поле идентификатора книги из Biblio
+$book_title = "title";  # Поле наименования книги из Biblio
+$book_bio = "short_story";  # Поле описания книги из Biblio
+$book_cover = "book_cover";  # Поле обложки из Biblio
 $book_duration = "";  # Поле длительности книги из Biblio
 $book_rating = "";  # Поле рейтинга книги из Biblio
-$book_amount = "";  # Поле цены книги из Biblio
-$book_plus18 = "";  # Поле ограничения книги по возрасту из Biblio (18+)
-$book_plus16 = "";  # Поле ограничения книги по возрасту из Biblio (16+)
-$book_with_music = "";  # Поле обозначения книг с музыкой из Biblio
+$book_amount = "book_amount";  # Поле цены книги из Biblio
+$book_plus18 = "book_plus_18";  # Поле ограничения книги по возрасту из Biblio (18+)
+$book_plus16 = "book_plus_16";  # Поле ограничения книги по возрасту из Biblio (16+)
+$book_with_music = "book_with_music";  # Поле обозначения книг с музыкой из Biblio
 $book_not_finished = "";  # Поле обозначения неоконченности книги из Biblio
-$book_author = "";  # Поле автора книги из Biblio
-$book_reader = "";  # Поле читателя книги из Biblio
-$book_series = "";  # Поле серии книги из Biblio
-$book_genres = "";  # Поле жанра книги из Biblio
+$book_author = "book_author";  # Поле автора книги из Biblio
+$book_reader = "book_reader";  # Поле читателя книги из Biblio
+$book_series = "book_series";  # Поле серии книги из Biblio
+$book_genres = "category";  # Поле жанра книги из Biblio
 $book_lang = "";  # Поле языка книги из Biblio
 $book_publish_date = "";  # Поле даты публикации книги из Biblio
 $book_sale_closed = "";  # Поле доступности книги для продажи из Biblio
 
-$meta_translater = "";  # Поле переводчика книги из Biblio
+$meta_translater = "book_translater";  # Поле переводчика книги из Biblio
 $meta_copyright = "";  # Поле лицензии книги из Biblio
-$meta_publisher = "";  # Поле издателя книги из Biblio
+$meta_publisher = "book_publisher";  # Поле издателя книги из Biblio
 
 # Дополнительные поля для DLE
-$dle_author = "";
-$dle_fields = "";
-$dle_comm = "";
-$dle_main = "";
-$dle_approve = "";
-$dle_alt = "";
+$dle_author = "autor";
+$dle_fields = "xfields";
+$dle_comm = "allow_comm";
+$dle_main = "allow_main";
+$dle_approve = "approve";
+$dle_alt = "alt_name";
 $dle_category_db = "dle_category";
 ################################################################################
 
@@ -61,11 +64,31 @@ $last_page = 0;  # Последняя страница
 $biblio_api_url = "https://api.bibliovk.ru/api/ref/data/catalog/full?page=";  # URL API
 $database = new stdClass;
 
+/**
+ * Класс книги с информацией о ней
+ */
 class Book
 {
-    function __construct($id, $title, $bio, $cover, $duration, $rating, $amount, $plus18, $plus16, $with_music,
-                         $not_finished, $author, $reader, $series, $genres, $lang, $publish_date, $sale_closed)
-    {
+    function __construct(
+        $id,
+        $title,
+        $bio,
+        $cover,
+        $duration,
+        $rating,
+        $amount,
+        $plus18,
+        $plus16,
+        $with_music,
+        $not_finished,
+        $author,
+        $reader,
+        $series,
+        $genres,
+        $lang,
+        $publish_date,
+        $sale_closed
+    ) {
         $this->id = $id ?: null;
         $this->title = $title ?: "";
         $this->bio = $bio ?: "";
@@ -87,6 +110,9 @@ class Book
     }
 }
 
+/**
+ * Класс с метаинформацией о книге
+ */
 class Meta
 {
     function __construct($translater, $copyright, $publisher)
@@ -97,9 +123,12 @@ class Meta
     }
 }
 
+/**
+ * Метод получения книг с одного запроса
+ */
 function GetBooksFromPage()
 {
-    print_r("getting books\n");
+    PrintMsg("Getting books\n");
     global $current_page;
     global $biblio_api_url;
     global $referal_key;
@@ -113,15 +142,18 @@ function GetBooksFromPage()
     ];
     $ctx = stream_context_create($opts);
 
-    $books = json_decode(file_get_contents($biblio_api_url.$current_page, false, $ctx), true);
+    $books = json_decode(file_get_contents($biblio_api_url . $current_page, false, $ctx), true);
     $current_page++;
 
     return $books;
 }
 
+/**
+ * Метод для подключения к базе данных
+ */
 function NewDatabaseConnection()
 {
-    print_r("connection to database\n");
+    PrintMsg("Connection to database\n");
     global $db_driver;
     global $db_name;
     global $db_host;
@@ -131,45 +163,53 @@ function NewDatabaseConnection()
 
     try {
         $database = new PDO("$db_driver:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_password);
-        print_r("Connection ok\n");
+        PrintMsg("Connection ok\n");
     } catch (PDOException $e) {
         die("PDO Error: " . $e->getMessage());
     }
 }
 
-function GetCategories($categories) {
+/**
+ * Метод для получения категорий из DLE
+ */
+function GetCategories($categories)
+{
     global $database;
     global $dle_category_db;
+    global $create_new_categories;
 
     $result = '';
     $cats = explode(", ", $categories);
 
     foreach ($cats as $category) {
         $sql = "SELECT id FROM $dle_category_db cat WHERE cat.name = '$category'";
-        try{
-            	global $result;
-                $cat = $database->query($sql)->fetch();
-                if ($cat){
-                    $current_cat = $cat["id"];
-                    print_r("категория $category\n");
-                    print_r("id: $current_cat\n");
-                } else {
-                        print_r("нет категории\n");
-                        $sqlin = "INSERT INTO $dle_category_db (name) VALUES ('$category')";
-                        $res = $database->exec($sqlin);
-                        $cat = $database->query($sql);
-                        $current_cat = $cat->fetch()["id"];
-                }
-                $result.=$current_cat.",";
+        try {
+            $cat = $database->query($sql)->fetch();
+            if ($cat) {
+                $current_cat = $cat["id"];
+                PrintMsg("Категория $category ($current_cat)\n");
+            } else if ($create_new_categories) {
+                PrintMsg("Нет категории: $category\n");
+                $sqlin = "INSERT INTO $dle_category_db (name) VALUES ('$category')";
+                $res = $database->exec($sqlin);
+                $cat = $database->query($sql);
+                $current_cat = $cat->fetch()["id"];
+                PrintMsg("Категория создана\n");
+            } else {
+                PrintMsg("Категории нет и она не будет создана!\n");
+            }
+            $result .= $current_cat . ",";
         } catch (PDOException $e) {
-            print_r($database->errorInfo());
+            PrintErr($database->errorInfo());
         }
     }
     substr($result, 0, -1);
     return $result;
 }
 
-
+/**
+ * Метод сохранения полученных из запроса книг в бд
+ */
 function SaveBooksFromPage($books)
 {
     global $db_table;
@@ -203,6 +243,8 @@ function SaveBooksFromPage($books)
     global $dle_main;
     global $dle_alt;
 
+    global $check_exist;
+    global $save_images_to_server;
 
     foreach ($books["data"] as $book) {
         $current_book = new Book(
@@ -234,83 +276,113 @@ function SaveBooksFromPage($books)
 
         // Пропуск временно запрещенных к публикации книг
         if ($book['meta_data']["publisher"] == 'UGC') continue;
-
         if (!empty($book["sale_closed"])) continue;
-        if ($current_book->plus18) $current_book->plus18 = 1; else $current_book->plus18 = 0;
-        if ($current_book->plus16) $current_book->plus16 = 1; else $current_book->plus16 = 0;
-        if ($current_book->with_music) $current_book->with_music = 1; else $current_book->with_music = 0;
-        if ($current_book->not_finished) $current_book->not_finished = 1; else $current_book->not_finished = 0;
-        if ($current_book->sale_closed) $current_book->sale_closed = 1; else $current_book->sale_closed = 0;
 
-        print_r("Add book with id ".$current_book->id." and name ".$current_book->title."\n");
+        if ($current_book->plus18) $current_book->plus18 = 1;
+        else $current_book->plus18 = 0;
+        if ($current_book->plus16) $current_book->plus16 = 1;
+        else $current_book->plus16 = 0;
+        if ($current_book->with_music) $current_book->with_music = 1;
+        else $current_book->with_music = 0;
+        if ($current_book->not_finished) $current_book->not_finished = 1;
+        else $current_book->not_finished = 0;
+        if ($current_book->sale_closed) $current_book->sale_closed = 1;
+        else $current_book->sale_closed = 0;
+
+        PrintMsg("Add book with id " . $current_book->id . " and name " . $current_book->title . "\n");
 
         if (strripos($current_book->title, "'")) {
             $temp_title = $current_book->title;
             $current_book->title = str_replace("'", "\'", $temp_title);
-            print_r("Replaced title: ".$current_book->title);
+            PrintMsg("Replaced title: " . $current_book->title);
         }
 
-        $check = "SELECT * FROM $db_table bt WHERE bt.$book_title = '$current_book->title';";
-        try {
-            $result = $database->query($check);
-            if ($result->fetch()) continue;
-        } catch(PDOException $e) {
-            print_r($e->errorInfo());
-            continue;
+        if ($check_exist) {
+            $check = "SELECT * FROM $db_table bt WHERE bt.$book_title = '$current_book->title';";
+            try {
+                $result = $database->query($check);
+                if ($result->fetch()) continue;
+            } catch (PDOException $e) {
+                PrintErr($e->errorInfo());
+                continue;
+            }
         }
 
-        $alt_name = "book-".$current_book->id;
-        $agelimit = "0+";
-        if ($current_book->plus18 == 1) {
-            $agelimit = "18+";
-        } else if ($current_book->plus16 == 1) {
-            $agelimit = "16+";
-        }
+        $alt_name = "book-" . $current_book->id;
 
         $d = strtotime("now");
         $currentDate = date("Y-m-d h:i:s", $d);
         $categories = GetCategories($current_book->genres);
 
-        $directoryWithFile = "./uploads/posts/biblio-books/".$alt_name.".jpg";
-        $shortDirectoryWithFile = "biblio-books/".$alt_name.".jpg";
-        if (!copy($current_book->cover, $directoryWithFile)){
-            print_r("Error with save image\n");
+        if ($save_images_to_server) {
+            $directoryWithFile = "./uploads/posts/biblio-books/" . $alt_name . ".jpg";
+            $shortDirectoryWithFile = "biblio-books/" . $alt_name . ".jpg";
+            if (!copy($current_book->cover, $directoryWithFile)) {
+                PrintErr("Error with save image\n");
+            }
         }
 
+        $current_book->bio = str_replace("<p>", " ", $current_book->bio);
+        $current_book->bio = str_replace("</p>", " ", $current_book->bio);
+        $current_book->bio = str_replace("<br>", " ", $current_book->bio);
+        $current_book->bio = str_replace("</ br>", " ", $current_book->bio);
+        $current_book->bio = str_replace("<br />", " ", $current_book->bio);
+        $current_book->bio = str_replace("&quot;", " ", $current_book->bio);
+        $current_book->bio = str_replace("&hellip;", " ", $current_book->bio);
+        $current_book->bio = str_replace("&mdash;", " ", $current_book->bio);
+        $current_book->bio = str_replace("&nbsp;", " ", $current_book->bio);
+
         $sql = "INSERT INTO $db_table (
-                $dle_author,$book_bio,$dle_fields,$book_title,$dle_alt,$dle_comm,$dle_main,$dle_approve,$book_genres,full_story,keywords,date,category
+                $dle_author,$book_bio,$dle_fields,$book_title,$dle_alt,$dle_comm,$dle_main,$dle_approve,$book_genres,date
             ) VALUES (
-                'admin1', '$current_book->bio', 'format|Аудиокнига||name|$current_book->author||track_name|$current_book->title||book_reader|$current_book->reader||book_publisher|$current_meta->publisher||book_plus_18|$current_book->plus18||book_plus_16|$current_book->plus16||book_id|$current_book->id||poster|$shortDirectoryWithFile||text_pesen|$current_book->bio', '$current_book->title', '$alt_name', 1, 1, 1, '$current_book->genres','','','$currentDate','$categories'
+                'admin', '$current_book->bio', '$book_id|$current_book->id||$book_amount|$current_book->amount||$book_plus16|$current_book->plus16||$book_plus18|$current_book->plus18||$book_with_music|$current_book->with_music||$book_author|$current_book->author||$book_cover|$current_book->cover||$book_reader|$current_book->reader||$meta_publisher|$current_meta->publisher||$book_series|$current_book->series||$meta_translater|$current_meta->translater', '$current_book->title', '$alt_name', 1, 1, 1,'$categories','$currentDate'
             );";
 
         try {
             $result = $database->exec($sql);
-        } catch(PDOException $e) {
-            print_r($e->errorInfo());
+        } catch (PDOException $e) {
+            PrintErr($e->errorInfo());
             continue;
         }
 
-        print_r("done\n");
+        PrintMsg("Done\n");
     }
 }
 
+/**
+ * Функция получения всего каталога Biblio
+ */
 function GetBooksFromAllPages()
 {
-    print_r("getting books from all pages\n");
+    PrintMsg("Getting books from all pages\n");
     global $last_page;
     global $current_page;
 
     NewDatabaseConnection();
     $last_page = (int)GetBooksFromPage()["last_page"];
-
     while ($current_page <= $last_page) {
         SaveBooksFromPage(GetBooksFromPage());
-        print_r("Pages: ".$current_page."/".$last_page."\n");
+        PrintMsg("Pages: " . $current_page . "/" . $last_page . "\n");
     }
 
-    print_r("Completed!");
+    PrintMsg("Completed!");
+}
+
+/**
+ * Функция для отображения обычного сообщения
+ */
+function PrintMsg($msg)
+{
+    print_r("[msg]: $msg \n");
+}
+
+/**
+ * Функция для отображения сообщения об ошибке
+ */
+function PrintErr($err)
+{
+    print_r("\n[err]: $err \n");
 }
 
 GetBooksFromAllPages();
-
 ?>
